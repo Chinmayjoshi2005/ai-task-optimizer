@@ -1,0 +1,32 @@
+{
+  "name": "chinu",
+  "role": "student",
+  "schedule_days": 3,
+  "weekly_schedule": {
+    "Thrusday": {
+      "start": "7:00 AM",
+      "end": "5:30 PM",
+      "type": "college/work"
+    },
+    "Friday": {
+      "start": "7:00 AM",
+      "end": "5:30 PM",
+      "type": "college/work"
+    },
+    "Saturday": {
+      "start": "7:00 AM",
+      "end": "5:30 PM",
+      "type": "college/work"
+    }
+  },
+  "peak_energy": "night",
+  "study_preference": "silence",
+  "sleep_schedule": {
+    "bedtime": "10:30 PM",
+    "wake_time": "5:30 AM"
+  },
+  "family_time": "6:30 - 7:00 PM",
+  "workout_preference": "evening",
+  "workout_impact": "tired",
+  "main_goals": "improve grades, learn coding, daily college tasks, stay fit and healthy"
+}

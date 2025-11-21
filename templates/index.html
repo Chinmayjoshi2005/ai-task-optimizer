@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Task Optimizer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="header-gradient p-4 rounded">
+                <h1 class="display-5 fw-bold">Welcome back, {{ profile.name or 'User' }}!</h1>
+                <p class="lead">Optimize your daily schedule with AI-powered recommendations</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <i class="fas fa-tasks fa-2x text-primary mb-2"></i>
+                    <h5 class="card-title">Pending Tasks</h5>
+                    <div class="stat-number">{{ tasks.pending|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">Completed Tasks</h5>
+                    <div class="stat-number">{{ tasks.completed|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <i class="fas fa-calendar-check fa-2x text-info mb-2"></i>
+                    <h5 class="card-title">Schedules Generated</h5>
+                    <div class="stat-number">{{ tasks.schedules|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <i class="fas fa-user fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">Profile Status</h5>
+                    <div class="stat-number">{{ 'Complete' if profile else 'Incomplete' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-primary w-100" onclick="location.href='/tasks'">
+                                <i class="fas fa-plus me-2"></i>Add Task
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-success w-100" onclick="generateSchedule()">
+                                <i class="fas fa-calendar-alt me-2"></i>Generate Schedule
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-info w-100" onclick="location.href='/profile'">
+                                <i class="fas fa-user-edit me-2"></i>Edit Profile
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-secondary w-100" onclick="location.href='/schedule'">
+                                <i class="fas fa-eye me-2"></i>View Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Pending Tasks</h5>
+                    <span class="badge bg-primary">{{ tasks.pending|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if tasks.pending %}
+                        {% for task in tasks.pending[:5] %}
+                        <div class="card task-card priority-{{ task.priority }} mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-title">{{ task.description }}</h6>
+                                    <span class="badge bg-{{ 'danger' if task.priority == 'high' else 'warning' if task.priority == 'medium' else 'success' }}">{{ task.priority }}</span>
+                                </div>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ task.duration }} | 
+                                        <i class="fas fa-tag me-1"></i>{{ task.type }}
+                                    </small>
+                                </p>
+                                <p class="card-text">{{ task.preferences }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if tasks.pending|length > 5 %}
+                        <div class="text-center">
+                            <a href="/tasks" class="btn btn-outline-primary">View All Tasks</a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">No pending tasks. <a href="/tasks">Add some tasks</a> to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Your Profile</h5>
+                    <a href="/profile" class="btn btn-sm btn-outline-primary">Edit</a>
+                </div>
+                <div class="card-body">
+                    {% if profile %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Name:</strong> {{ profile.name }}</p>
+                                <p><strong>Role:</strong> {{ profile.role }}</p>
+                                <p><strong>Peak Energy:</strong> {{ profile.peak_energy }}</p>
+                                <p><strong>Study Preference:</strong> {{ profile.study_preference }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Schedule Days:</strong> {{ profile.schedule_days }}</p>
+                                <p><strong>Workout Preference:</strong> {{ profile.workout_preference }}</p>
+                                <p><strong>Family Time:</strong> {{ profile.family_time }}</p>
+                                <p><strong>Main Goals:</strong> {{ profile.main_goals }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No profile found. <a href="/profile">Create your profile</a> to get personalized schedule recommendations!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateSchedule() {
+    $.ajax({
+        url: '/api/schedule',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({}),
+        success: function(response) {
+            alert('Schedule generated successfully!');
+            window.location.href = '/schedule';
+        },
+        error: function() {
+            alert('Error generating schedule');
+        }
+    });
+}
+</script>
+{% endblock %}

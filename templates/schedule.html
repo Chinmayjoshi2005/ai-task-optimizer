@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule - AI Task Optimizer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="header-gradient p-4 rounded mb-4">
+                <h1 class="display-5 fw-bold">Daily Schedule</h1>
+                <p class="lead">Your AI-optimized daily schedule</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Today's Schedule</h5>
+                    <div>
+                        <input type="date" id="scheduleDate" class="form-control form-control-sm" value="{{ today or '' }}">
+                        <button class="btn btn-sm btn-primary mt-2" id="generateSchedule"><i class="fas fa-sync me-1"></i>Regenerate</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="scheduleContent">
+                        {% if tasks.schedules and today in tasks.schedules %}
+                            {% for item in tasks.schedules[today].schedule %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <span class="badge bg-primary">{{ item.time }}</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="card-title">{{ item.task }}</h6>
+                                            <p class="card-text text-muted">{{ item.reason }}</p>
+                                            <span class="badge bg-secondary">{{ item.type }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>Daily Summary</h6>
+                                <p>{{ tasks.schedules[today].daily_summary }}</p>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header bg-white">
+                                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul>
+                                        {% for tip in tasks.schedules[today].tips %}
+                                        <li>{{ tip }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h5>No schedule found for today</h5>
+                                <p class="text-muted">Generate a schedule to get started with your optimized day plan</p>
+                                <button class="btn btn-primary" id="generateFirstSchedule"><i class="fas fa-calendar-plus me-2"></i>Generate Schedule</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Schedule History</h5>
+                </div>
+                <div class="card-body">
+                    {% if tasks.schedules %}
+                        {% for date, schedule in tasks.schedules.items() %}
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>{{ date }}</span>
+                                    <button class="btn btn-sm btn-outline-primary view-schedule" data-date="{{ date }}">View</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No schedule history available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>AI Optimization</h5>
+                </div>
+                <div class="card-body">
+                    <p>Your schedule is optimized using AI algorithms that consider:</p>
+                    <ul>
+                        <li>Your energy patterns</li>
+                        <li>Study preferences</li>
+                        <li>Workout timing</li>
+                        <li>Family time constraints</li>
+                        <li>Task priorities</li>
+                        <li>College/work schedule</li>
+                    </ul>
+                    <button class="btn btn-success w-100 mt-3" id="aiOptimize"><i class="fas fa-brain me-2"></i>AI Optimize</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generate schedule
+    document.getElementById('generateSchedule').addEventListener('click', function() {
+        const date = document.getElementById('scheduleDate').value || new Date().toISOString().split('T')[0];
+        
+        $.ajax({
+            url: '/api/schedule',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({date: date}),
+            success: function(response) {
+                alert('Schedule generated successfully!');
+                location.reload();
+            },
+            error: function() {
+                alert('Error generating schedule');
+            }
+        });
+    });
+    
+    // Generate first schedule
+    document.getElementById('generateFirstSchedule').addEventListener('click', function() {
+        document.getElementById('generateSchedule').click();
+    });
+    
+    // AI Optimize button
+    document.getElementById('aiOptimize').addEventListener('click', function() {
+        alert('In a full implementation, this would connect to an AI service like Claude or OpenAI to generate an optimized schedule based on your profile and tasks.');
+        
+        // Simulate AI generation
+        $.ajax({
+            url: '/api/schedule',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function(response) {
+                alert('AI-optimized schedule generated successfully!');
+                location.reload();
+            },
+            error: function() {
+                alert('Error generating AI-optimized schedule');
+            }
+        });
+    });
+    
+    // View historical schedule
+    document.querySelectorAll('.view-schedule').forEach(button => {
+        button.addEventListener('click', function() {
+            const date = this.getAttribute('data-date');
+            document.getElementById('scheduleDate').value = date;
+            // In a full implementation, this would fetch and display the specific schedule
+            alert(`In a full implementation, this would show the schedule for ${date}`);
+        });
+    });
+});
+</script>
+{% endblock %}

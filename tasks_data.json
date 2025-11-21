@@ -1,0 +1,114 @@
+{
+  "pending": [
+    {
+      "id": "2",
+      "description": "coding practice",
+      "priority": "high",
+      "duration": "1h",
+      "type": "study",
+      "preferences": "needs silence",
+      "status": "pending",
+      "added_date": "2025-11-19"
+    },
+    {
+      "id": "3",
+      "description": "GCA",
+      "priority": "high",
+      "duration": "1h",
+      "type": "work",
+      "preferences": "flexible",
+      "status": "pending",
+      "added_date": "2025-11-19"
+    }
+  ],
+  "completed": [
+    {
+      "id": "4",
+      "description": "workout",
+      "priority": "high",
+      "duration": "30m",
+      "type": "health",
+      "preferences": "flexible",
+      "status": "completed",
+      "added_date": "2025-11-19",
+      "completed_date": "2025-11-21"
+    },
+    {
+      "id": "1",
+      "description": "daily work on project",
+      "priority": "medium",
+      "duration": "2h",
+      "type": "work",
+      "preferences": "flexible",
+      "status": "completed",
+      "added_date": "2025-11-19",
+      "completed_date": "2025-11-21"
+    }
+  ],
+  "schedules": {
+    "2025-11-21": {
+      "schedule": [
+        {
+          "time": "7:00 AM - 7:30 AM",
+          "task": "Morning routine & light stretching",
+          "reason": "Gentle start, won't tire you out",
+          "type": "health"
+        },
+        {
+          "time": "8:00 AM - 10:00 AM",
+          "task": "Deep work session - Coding practice",
+          "reason": "High energy time for demanding tasks",
+          "type": "study"
+        },
+        {
+          "time": "10:00 AM - 10:15 AM",
+          "task": "Break",
+          "reason": "Short break to refresh your mind",
+          "type": "break"
+        },
+        {
+          "time": "10:15 AM - 12:00 PM",
+          "task": "Project work",
+          "reason": "Continued focus time for complex tasks",
+          "type": "work"
+        },
+        {
+          "time": "1:00 PM - 2:00 PM",
+          "task": "Lunch break",
+          "reason": "Nourishment and rest",
+          "type": "personal"
+        },
+        {
+          "time": "2:00 PM - 3:30 PM",
+          "task": "College/Work commitments",
+          "reason": "Scheduled college/work time",
+          "type": "college/work"
+        },
+        {
+          "time": "4:00 PM - 5:00 PM",
+          "task": "Family time",
+          "reason": "Dedicated family time as per your preferences",
+          "type": "family"
+        },
+        {
+          "time": "6:00 PM - 7:00 PM",
+          "task": "Workout session",
+          "reason": "Evening workout as per your preferences",
+          "type": "health"
+        },
+        {
+          "time": "8:00 PM - 9:00 PM",
+          "task": "Review and plan for tomorrow",
+          "reason": "Reflect on the day and prepare for tomorrow",
+          "type": "personal"
+        }
+      ],
+      "daily_summary": "Balanced day with study, work, health, and family time. High-energy tasks scheduled during peak hours.",
+      "tips": [
+        "Take 5-min breaks every hour",
+        "Stay hydrated",
+        "Maintain good posture while working"
+      ]
+    }
+  }
+}

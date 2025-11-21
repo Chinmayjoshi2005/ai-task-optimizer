@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - AI Task Optimizer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="header-gradient p-4 rounded mb-4">
+                <h1 class="display-5 fw-bold">Task Management</h1>
+                <p class="lead">Add, view, and manage your tasks for optimal scheduling</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Task</h5>
+                </div>
+                <div class="card-body">
+                    <form id="taskForm">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Task Description</label>
+                            <input type="text" class="form-control" id="description" name="description" placeholder="What needs to be done?" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="">Select Priority</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="duration" class="form-label">Duration</label>
+                                <input type="text" class="form-control" id="duration" name="duration" placeholder="e.g., 1h, 30m" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="type" class="form-label">Task Type</label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="study">Study</option>
+                                    <option value="work">Work</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="health">Health</option>
+                                    <option value="family">Family</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="preferences" class="form-label">Preferences</label>
+                            <input type="text" class="form-control" id="preferences" name="preferences" placeholder="e.g., needs silence, outdoors, flexible">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Add Task</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Pending Tasks</h5>
+                    <span class="badge bg-primary">{{ tasks.pending|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if tasks.pending %}
+                        {% for task in tasks.pending %}
+                        <div class="card task-card priority-{{ task.priority }} mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-title">{{ task.description }}</h6>
+                                    <span class="badge bg-{{ 'danger' if task.priority == 'high' else 'warning' if task.priority == 'medium' else 'success' }}">{{ task.priority }}</span>
+                                </div>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ task.duration }} | 
+                                        <i class="fas fa-tag me-1"></i>{{ task.type }}
+                                    </small>
+                                </p>
+                                <p class="card-text">{{ task.preferences }}</p>
+                                <button class="btn btn-sm btn-success complete-task" data-id="{{ task.id }}">
+                                    <i class="fas fa-check me-1"></i>Complete
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No pending tasks. Add some tasks to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Completed Tasks</h5>
+                    <span class="badge bg-success">{{ tasks.completed|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if tasks.completed %}
+                        {% for task in tasks.completed %}
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ task.description }}</span>
+                                    <span class="badge bg-secondary">{{ task.type }}</span>
+                                </div>
+                                <small class="text-muted">Completed: {{ task.completed_date }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No completed tasks yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Be specific with task descriptions</li>
+                        <li>Estimate durations realistically</li>
+                        <li>Set appropriate priorities</li>
+                        <li>Complete tasks to track your progress</li>
+                        <li>Regularly review and update your tasks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add task form submission
+    document.getElementById('taskForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            action: 'add',
+            description: formData.get('description'),
+            priority: formData.get('priority'),
+            duration: formData.get('duration'),
+            type: formData.get('type'),
+            preferences: formData.get('preferences')
+        };
+        
+        $.ajax({
+            url: '/api/tasks',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                alert('Task added successfully!');
+                location.reload();
+            },
+            error: function() {
+                alert('Error adding task');
+            }
+        });
+    });
+    
+    // Complete task buttons
+    document.querySelectorAll('.complete-task').forEach(button => {
+        button.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-id');
+            
+            // Find task index by ID
+            $.ajax({
+                url: '/api/tasks',
+                method: 'GET',
+                success: function(response) {
+                    const pendingTasks = response.pending;
+                    let taskIndex = -1;
+                    
+                    for (let i = 0; i < pendingTasks.length; i++) {
+                        if (pendingTasks[i].id === taskId) {
+                            taskIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    if (taskIndex !== -1) {
+                        const data = {
+                            action: 'complete',
+                            index: taskIndex
+                        };
+                        
+                        $.ajax({
+                            url: '/api/tasks',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(data),
+                            success: function(response) {
+                                alert('Task completed successfully!');
+                                location.reload();
+                            },
+                            error: function() {
+                                alert('Error completing task');
+                            }
+                        });
+                    } else {
+                        alert('Task not found');
+                    }
+                },
+                error: function() {
+                    alert('Error fetching tasks');
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
