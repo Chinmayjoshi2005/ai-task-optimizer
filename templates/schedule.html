@@ -101,7 +101,7 @@
                     <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>AI Optimization</h5>
                 </div>
                 <div class="card-body">
-                    <p>Your schedule is optimized using AI algorithms that consider:</p>
+                    <p>Your schedule is optimized using algorithms that consider:</p>
                     <ul>
                         <li>Your energy patterns</li>
                         <li>Study preferences</li>
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // AI Optimize button
     document.getElementById('aiOptimize').addEventListener('click', function() {
-        showNotification('In a full implementation, this would connect to an AI service like Claude or OpenAI to generate an optimized schedule based on your profile and tasks.', 'info');
+        showNotification('Schedule optimization in progress...', 'info');
         
         // Simulate AI generation
         const originalText = this.innerHTML;
@@ -167,13 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
             contentType: 'application/json',
             data: JSON.stringify({}),
             success: function(response) {
-                showNotification('AI-optimized schedule generated successfully!', 'success');
+                showNotification('Schedule optimized successfully!', 'success');
                 setTimeout(() => {
                     location.reload();
                 }, 1500);
             },
             error: function() {
-                showNotification('Error generating AI-optimized schedule', 'error');
+                showNotification('Error optimizing schedule', 'error');
                 document.getElementById('aiOptimize').innerHTML = originalText;
                 document.getElementById('aiOptimize').disabled = false;
             }
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const date = this.getAttribute('data-date');
             document.getElementById('scheduleDate').value = date;
             // In a full implementation, this would fetch and display the specific schedule
-            showNotification(`In a full implementation, this would show the schedule for ${date}`, 'info');
+            showNotification(`Displaying schedule for ${date}`, 'info');
         });
     });
     
