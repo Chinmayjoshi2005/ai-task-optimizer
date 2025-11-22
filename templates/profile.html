@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="header-gradient p-4 rounded mb-4">
+            <div class="header-gradient p-4 rounded mb-4 fade-in">
                 <h1 class="display-5 fw-bold">User Profile</h1>
                 <p class="lead">Manage your personal information and preferences for optimal scheduling</p>
             </div>
@@ -15,7 +15,7 @@
 
     <div class="row">
         <div class="col-lg-8">
-            <div class="card">
+            <div class="card bounce-in">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Profile Information</h5>
                 </div>
@@ -176,7 +176,7 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card">
+            <div class="card slide-in-right">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h5>
                 </div>
@@ -191,7 +191,7 @@
                 </div>
             </div>
 
-            <div class="card mt-4">
+            <div class="card mt-4 slide-in-right">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Current Profile</h5>
                 </div>
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addScheduleRow').addEventListener('click', function() {
         const scheduleContainer = document.getElementById('weeklySchedule');
         const newRow = document.createElement('div');
-        newRow.className = 'row schedule-row mb-2';
+        newRow.className = 'row schedule-row mb-2 animated fadeIn';
         newRow.innerHTML = `
             <div class="col-md-4">
                 <input type="text" class="form-control" name="schedule_day[]" placeholder="Day (e.g., Monday)">
@@ -231,16 +231,29 @@ document.addEventListener('DOMContentLoaded', function() {
         scheduleContainer.appendChild(newRow);
     });
 
-    // Remove schedule row
+    // Remove schedule row with animation
     document.getElementById('weeklySchedule').addEventListener('click', function(e) {
         if (e.target.closest('.remove-schedule')) {
-            e.target.closest('.schedule-row').remove();
+            const row = e.target.closest('.schedule-row');
+            row.style.transition = 'all 0.3s ease';
+            row.style.transform = 'translateX(100px)';
+            row.style.opacity = '0';
+            
+            setTimeout(() => {
+                row.remove();
+            }, 300);
         }
     });
 
     // Form submission
     document.getElementById('profileForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        // Show loading animation
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="loading"></span> Saving...';
+        submitBtn.disabled = true;
         
         // Collect form data
         const formData = new FormData(this);
@@ -282,14 +295,47 @@ document.addEventListener('DOMContentLoaded', function() {
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                alert('Profile saved successfully!');
-                location.reload();
+                showNotification('Profile saved successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             },
             error: function() {
-                alert('Error saving profile');
+                showNotification('Error saving profile', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         });
     });
+    
+    // Add focus effects to form elements
+    $('.form-control, .form-select').focus(function() {
+        $(this).css('box-shadow', '0 0 0 0.25rem rgba(106, 17, 203, 0.25)');
+        $(this).css('border-color', '#6a11cb');
+    });
+    
+    $('.form-control, .form-select').blur(function() {
+        $(this).css('box-shadow', '');
+    });
 });
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = $(`
+        <div class="notification alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed" style="top: 20px; right: 20px; z-index: 9999; animation: slideInRight 0.3s ease;">
+            ${message}
+        </div>
+    `);
+    
+    // Add to body
+    $('body').append(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.fadeOut(() => {
+            notification.remove();
+        });
+    }, 3000);
+}
 </script>
 {% endblock %}

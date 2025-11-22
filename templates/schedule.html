@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="header-gradient p-4 rounded mb-4">
+            <div class="header-gradient p-4 rounded mb-4 fade-in">
                 <h1 class="display-5 fw-bold">Daily Schedule</h1>
                 <p class="lead">Your AI-optimized daily schedule</p>
             </div>
@@ -15,7 +15,7 @@
 
     <div class="row mb-4">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card bounce-in">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Today's Schedule</h5>
                     <div>
@@ -27,7 +27,7 @@
                     <div id="scheduleContent">
                         {% if tasks.schedules and today in tasks.schedules %}
                             {% for item in tasks.schedules[today].schedule %}
-                            <div class="card mb-3">
+                            <div class="card mb-3 schedule-item slide-in-left">
                                 <div class="card-body">
                                     <div class="d-flex">
                                         <div class="me-3">
@@ -43,12 +43,12 @@
                             </div>
                             {% endfor %}
                             
-                            <div class="alert alert-info">
+                            <div class="alert alert-info slide-in-left">
                                 <h6><i class="fas fa-info-circle me-2"></i>Daily Summary</h6>
                                 <p>{{ tasks.schedules[today].daily_summary }}</p>
                             </div>
                             
-                            <div class="card">
+                            <div class="card slide-in-left">
                                 <div class="card-header bg-white">
                                     <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h6>
                                 </div>
@@ -74,14 +74,14 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card">
+            <div class="card slide-in-right">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-history me-2"></i>Schedule History</h5>
                 </div>
                 <div class="card-body">
                     {% if tasks.schedules %}
                         {% for date, schedule in tasks.schedules.items() %}
-                        <div class="card mb-2">
+                        <div class="card mb-2 schedule-history-item">
                             <div class="card-body py-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>{{ date }}</span>
@@ -96,7 +96,7 @@
                 </div>
             </div>
 
-            <div class="card mt-4">
+            <div class="card mt-4 slide-in-right">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>AI Optimization</h5>
                 </div>
@@ -123,17 +123,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('generateSchedule').addEventListener('click', function() {
         const date = document.getElementById('scheduleDate').value || new Date().toISOString().split('T')[0];
         
+        // Show loading animation
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="loading"></span> Generating...';
+        this.disabled = true;
+        
         $.ajax({
             url: '/api/schedule',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({date: date}),
             success: function(response) {
-                alert('Schedule generated successfully!');
-                location.reload();
+                showNotification('Schedule generated successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             },
             error: function() {
-                alert('Error generating schedule');
+                showNotification('Error generating schedule', 'error');
+                document.getElementById('generateSchedule').innerHTML = originalText;
+                document.getElementById('generateSchedule').disabled = false;
             }
         });
     });
@@ -145,20 +154,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // AI Optimize button
     document.getElementById('aiOptimize').addEventListener('click', function() {
-        alert('In a full implementation, this would connect to an AI service like Claude or OpenAI to generate an optimized schedule based on your profile and tasks.');
+        showNotification('In a full implementation, this would connect to an AI service like Claude or OpenAI to generate an optimized schedule based on your profile and tasks.', 'info');
         
         // Simulate AI generation
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="loading"></span> Optimizing...';
+        this.disabled = true;
+        
         $.ajax({
             url: '/api/schedule',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({}),
             success: function(response) {
-                alert('AI-optimized schedule generated successfully!');
-                location.reload();
+                showNotification('AI-optimized schedule generated successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             },
             error: function() {
-                alert('Error generating AI-optimized schedule');
+                showNotification('Error generating AI-optimized schedule', 'error');
+                document.getElementById('aiOptimize').innerHTML = originalText;
+                document.getElementById('aiOptimize').disabled = false;
             }
         });
     });
@@ -169,9 +186,38 @@ document.addEventListener('DOMContentLoaded', function() {
             const date = this.getAttribute('data-date');
             document.getElementById('scheduleDate').value = date;
             // In a full implementation, this would fetch and display the specific schedule
-            alert(`In a full implementation, this would show the schedule for ${date}`);
+            showNotification(`In a full implementation, this would show the schedule for ${date}`, 'info');
         });
     });
+    
+    // Add hover effects to schedule items
+    $('.schedule-item').hover(
+        function() {
+            $(this).css('transform', 'translateY(-5px)');
+        },
+        function() {
+            $(this).css('transform', 'translateY(0)');
+        }
+    );
 });
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = $(`
+        <div class="notification alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed" style="top: 20px; right: 20px; z-index: 9999; animation: slideInRight 0.3s ease;">
+            ${message}
+        </div>
+    `);
+    
+    // Add to body
+    $('body').append(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.fadeOut(() => {
+            notification.remove();
+        });
+    }, 3000);
+}
 </script>
 {% endblock %}

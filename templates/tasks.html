@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="header-gradient p-4 rounded mb-4">
+            <div class="header-gradient p-4 rounded mb-4 fade-in">
                 <h1 class="display-5 fw-bold">Task Management</h1>
                 <p class="lead">Add, view, and manage your tasks for optimal scheduling</p>
             </div>
@@ -15,7 +15,7 @@
 
     <div class="row">
         <div class="col-lg-8">
-            <div class="card">
+            <div class="card bounce-in">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Task</h5>
                 </div>
@@ -63,7 +63,7 @@
                 </div>
             </div>
 
-            <div class="card mt-4">
+            <div class="card mt-4 slide-in-left">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Pending Tasks</h5>
                     <span class="badge bg-primary">{{ tasks.pending|length }}</span>
@@ -71,7 +71,7 @@
                 <div class="card-body">
                     {% if tasks.pending %}
                         {% for task in tasks.pending %}
-                        <div class="card task-card priority-{{ task.priority }} mb-3">
+                        <div class="card task-card priority-{{ task.priority }} mb-3" id="task-{{ task.id }}">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <h6 class="card-title">{{ task.description }}</h6>
@@ -84,9 +84,12 @@
                                     </small>
                                 </p>
                                 <p class="card-text">{{ task.preferences }}</p>
-                                <button class="btn btn-sm btn-success complete-task" data-id="{{ task.id }}">
-                                    <i class="fas fa-check me-1"></i>Complete
-                                </button>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Added: {{ task.added_date }}</small>
+                                    <button class="btn btn-sm btn-success complete-task" data-id="{{ task.id }}">
+                                        <i class="fas fa-check me-1"></i>Complete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -98,7 +101,7 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card">
+            <div class="card slide-in-right">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Completed Tasks</h5>
                     <span class="badge bg-success">{{ tasks.completed|length }}</span>
@@ -106,10 +109,10 @@
                 <div class="card-body">
                     {% if tasks.completed %}
                         {% for task in tasks.completed %}
-                        <div class="card mb-2">
+                        <div class="card mb-2 completed-task">
                             <div class="card-body py-2">
                                 <div class="d-flex justify-content-between">
-                                    <span>{{ task.description }}</span>
+                                    <span><i class="fas fa-check-circle text-success me-1"></i> {{ task.description }}</span>
                                     <span class="badge bg-secondary">{{ task.type }}</span>
                                 </div>
                                 <small class="text-muted">Completed: {{ task.completed_date }}</small>
@@ -122,7 +125,7 @@
                 </div>
             </div>
 
-            <div class="card mt-4">
+            <div class="card mt-4 slide-in-right">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h5>
                 </div>
@@ -146,6 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('taskForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // Show loading animation
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="loading"></span> Adding...';
+        submitBtn.disabled = true;
+        
         const formData = new FormData(this);
         const data = {
             action: 'add',
@@ -162,11 +171,16 @@ document.addEventListener('DOMContentLoaded', function() {
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                alert('Task added successfully!');
-                location.reload();
+                showNotification('Task added successfully!', 'success');
+                document.getElementById('taskForm').reset();
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             },
             error: function() {
-                alert('Error adding task');
+                showNotification('Error adding task', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         });
     });
@@ -175,6 +189,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.complete-task').forEach(button => {
         button.addEventListener('click', function() {
             const taskId = this.getAttribute('data-id');
+            const taskElement = document.getElementById(`task-${taskId}`);
+            
+            // Show loading animation
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="loading"></span>';
+            this.disabled = true;
             
             // Find task index by ID
             $.ajax({
@@ -203,23 +223,65 @@ document.addEventListener('DOMContentLoaded', function() {
                             contentType: 'application/json',
                             data: JSON.stringify(data),
                             success: function(response) {
-                                alert('Task completed successfully!');
-                                location.reload();
+                                showNotification('Task completed successfully!', 'success');
+                                // Add animation effect
+                                taskElement.style.transition = 'all 0.5s ease';
+                                taskElement.style.transform = 'translateX(100%)';
+                                taskElement.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 500);
                             },
                             error: function() {
-                                alert('Error completing task');
+                                showNotification('Error completing task', 'error');
+                                button.innerHTML = originalText;
+                                button.disabled = false;
                             }
                         });
                     } else {
-                        alert('Task not found');
+                        showNotification('Task not found', 'error');
+                        button.innerHTML = originalText;
+                        button.disabled = false;
                     }
                 },
                 error: function() {
-                    alert('Error fetching tasks');
+                    showNotification('Error fetching tasks', 'error');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
                 }
             });
         });
     });
+    
+    // Add hover effects
+    $('.task-card').hover(
+        function() {
+            $(this).css('transform', 'translateX(5px)');
+        },
+        function() {
+            $(this).css('transform', 'translateX(0)');
+        }
+    );
 });
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = $(`
+        <div class="notification alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed" style="top: 20px; right: 20px; z-index: 9999; animation: slideInRight 0.3s ease;">
+            ${message}
+        </div>
+    `);
+    
+    // Add to body
+    $('body').append(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.fadeOut(() => {
+            notification.remove();
+        });
+    }, 3000);
+}
 </script>
 {% endblock %}
