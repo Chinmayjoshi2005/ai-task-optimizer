@@ -16,14 +16,19 @@
 
     <!-- Stats Cards -->
     <div class="row mb-4">
+        {% set total_tasks = (tasks.pending|length + tasks.completed|length) %}
         <div class="col-md-3 slide-in-left">
             <div class="stat-card">
                 <div class="card-body text-center">
                     <i class="fas fa-tasks fa-2x text-primary mb-2"></i>
                     <h5 class="card-title">Pending Tasks</h5>
                     <div class="stat-number">{{ tasks.pending|length }}</div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (tasks.pending|length * 10) % 100 }}%"></div>
+                    {% set pending_pct = (total_tasks and ((tasks.pending|length / total_tasks) * 100) or 0) | int %}
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="progress flex-grow-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pending_pct }}">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ pending_pct }}%"></div>
+                        </div>
+                        <span class="ms-2 text-muted">{{ pending_pct }}%</span>
                     </div>
                     <div class="mt-1">
                         <small class="text-muted">{{ tasks.pending|length }} tasks pending</small>
@@ -37,8 +42,12 @@
                     <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
                     <h5 class="card-title">Completed Tasks</h5>
                     <div class="stat-number">{{ tasks.completed|length }}</div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ (tasks.completed|length * 15) % 100 }}%"></div>
+                    {% set completed_pct = (total_tasks and ((tasks.completed|length / total_tasks) * 100) or 0) | int %}
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="progress flex-grow-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ completed_pct }}">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ completed_pct }}%"></div>
+                        </div>
+                        <span class="ms-2 text-muted">{{ completed_pct }}%</span>
                     </div>
                     <div class="mt-1">
                         <small class="text-muted">{{ tasks.completed|length }} tasks completed</small>
@@ -52,8 +61,13 @@
                     <i class="fas fa-calendar-check fa-2x text-info mb-2"></i>
                     <h5 class="card-title">Schedules Generated</h5>
                     <div class="stat-number">{{ tasks.schedules|length }}</div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ (tasks.schedules|length * 20) % 100 }}%"></div>
+                    {% set schedules_pct = ((tasks.schedules|length * 10) if tasks.schedules else 0) %}
+                    {% set schedules_pct = schedules_pct if schedules_pct < 100 else 100 %}
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="progress flex-grow-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ schedules_pct }}">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ schedules_pct }}%"></div>
+                        </div>
+                        <span class="ms-2 text-muted">{{ schedules_pct }}%</span>
                     </div>
                     <div class="mt-1">
                         <small class="text-muted">{{ tasks.schedules|length }} schedules created</small>
@@ -67,8 +81,12 @@
                     <i class="fas fa-user fa-2x text-warning mb-2"></i>
                     <h5 class="card-title">Profile Status</h5>
                     <div class="stat-number">{{ '✓' if profile.name else '✗' }}</div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ 75 if profile.name else 25 }}%"></div>
+                    {% set profile_pct = 100 if profile.name else 0 %}
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="progress flex-grow-1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ profile_pct }}">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ profile_pct }}%"></div>
+                        </div>
+                        <span class="ms-2 text-muted">{{ profile_pct }}%</span>
                     </div>
                     <div class="mt-1">
                         <small class="text-muted">{{ 'Profile complete' if profile.name else 'Profile incomplete' }}</small>
@@ -240,11 +258,23 @@ function generateSchedule() {
                 window.location.href = '/schedule';
             }, 1500);
         },
-        error: function() {
+        error: function(xhr) {
             clearInterval(interval);
             btn.html(originalText);
             btn.prop('disabled', false);
-            showNotification('Error generating schedule', 'error');
+            
+            // Handle different error responses
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                if (xhr.responseJSON.error === "Profile incomplete") {
+                    showNotification('Please complete your profile first. Go to Profile section to add your wake up and sleep times.', 'error');
+                } else if (xhr.responseJSON.error === "No tasks") {
+                    showNotification('Please add some tasks first. Go to Tasks section to add your pending tasks.', 'error');
+                } else {
+                    showNotification(xhr.responseJSON.message || 'Error generating schedule', 'error');
+                }
+            } else {
+                showNotification('Error generating schedule', 'error');
+            }
         }
     });
 }

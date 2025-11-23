@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, f
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from tracker import AITaskOptimizer
 from models import db, User, Task, Schedule
 from forms import LoginForm, RegistrationForm, ProfileForm, TaskForm
@@ -25,6 +25,53 @@ def load_user(id):
 # Helper function to get today's date
 def get_today():
     return datetime.now().strftime("%Y-%m-%d")
+
+# Helper methods for time calculations
+def add_time(time_str, minutes):
+    """Add minutes to time string and return new time string"""
+    try:
+        # Parse time string (e.g., "7:00 AM")
+        if "AM" in time_str.upper() or "PM" in time_str.upper():
+            time_obj = datetime.strptime(time_str.strip(), "%I:%M %p")
+        else:
+            time_obj = datetime.strptime(time_str.strip(), "%H:%M")
+        
+        # Add minutes
+        new_time = time_obj + timedelta(minutes=minutes)
+        
+        # Return in same format
+        if "AM" in time_str.upper() or "PM" in time_str.upper():
+            return new_time.strftime("%I:%M %p").lstrip('0')
+        else:
+            return new_time.strftime("%H:%M")
+    except:
+        # Fallback to simple addition if parsing fails
+        return time_str
+
+def subtract_time(time_str, minutes):
+    """Subtract minutes from time string and return new time string"""
+    try:
+        # Parse time string (e.g., "7:00 AM")
+        if "AM" in time_str.upper() or "PM" in time_str.upper():
+            time_obj = datetime.strptime(time_str.strip(), "%I:%M %p")
+        else:
+            time_obj = datetime.strptime(time_str.strip(), "%H:%M")
+        
+        # Subtract minutes
+        new_time = time_obj - timedelta(minutes=minutes)
+        
+        # Return in same format
+        if "AM" in time_str.upper() or "PM" in time_str.upper():
+            result = new_time.strftime("%I:%M %p").lstrip('0')
+            # Fix formatting issue with single digit hours
+            if result.startswith(':'):
+                result = '12' + result
+            return result
+        else:
+            return new_time.strftime("%H:%M")
+    except:
+        # Fallback to simple subtraction if parsing fails
+        return time_str
 
 # Routes for authentication
 @app.route('/login', methods=['GET', 'POST'])
@@ -242,133 +289,139 @@ def api_schedule():
     if existing_schedule:
         return jsonify(existing_schedule.schedule_data)
     
+    # Check if user has completed their profile
+    if not current_user.name or not current_user.sleep_schedule:
+        return jsonify({
+            "error": "Profile incomplete",
+            "message": "Please complete your profile before generating a schedule. We need your wake up and sleep times to create an optimized schedule."
+        }), 400
+    
     # Check if user has any pending tasks
     pending_tasks = Task.query.filter_by(user_id=current_user.id, status='pending').all()
     
     if not pending_tasks:
-        # Generate default schedule when no tasks exist
-        schedule_data = {
-            "schedule": [
-                {
-                    "time": "7:00 AM - 7:30 AM",
-                    "task": "Morning routine & light stretching",
-                    "reason": "Gentle start to energize your day",
-                    "type": "health"
-                },
-                {
-                    "time": "8:00 AM - 10:00 AM",
-                    "task": "Personal development time",
-                    "reason": "High energy time for learning and growth",
-                    "type": "study"
-                },
-                {
-                    "time": "10:00 AM - 10:15 AM",
-                    "task": "Break",
-                    "reason": "Short break to refresh your mind",
-                    "type": "break"
-                },
-                {
-                    "time": "10:15 AM - 12:00 PM",
-                    "task": "Focused work session",
-                    "reason": "Continued focus time for personal projects",
-                    "type": "work"
-                },
-                {
-                    "time": "1:00 PM - 2:00 PM",
-                    "task": "Lunch break",
-                    "reason": "Nourishment and rest",
-                    "type": "personal"
-                },
-                {
-                    "time": "2:00 PM - 4:00 PM",
-                    "task": "Skill building or hobbies",
-                    "reason": "Afternoon time for personal interests",
-                    "type": "personal"
-                },
-                {
-                    "time": "4:00 PM - 5:00 PM",
-                    "task": "Family/Personal time",
-                    "reason": "Dedicated time for family or personal activities",
-                    "type": "family"
-                },
-                {
-                    "time": "6:00 PM - 7:00 PM",
-                    "task": "Physical activity",
-                    "reason": "Evening movement for health and wellbeing",
-                    "type": "health"
-                },
-                {
-                    "time": "8:00 PM - 9:00 PM",
-                    "task": "Review and plan for tomorrow",
-                    "reason": "Reflect on the day and prepare for tomorrow",
-                    "type": "personal"
-                }
-            ],
-            "daily_summary": "Balanced day with personal development, health, and family time. No specific tasks were found, so a general productivity schedule was created.",
-            "tips": ["Take 5-min breaks every hour", "Stay hydrated", "Maintain good posture while working"]
-        }
-    else:
-        # Generate schedule based on user's actual tasks
-        schedule_data = {
-            "schedule": [
-                {
-                    "time": "7:00 AM - 7:30 AM",
-                    "task": "Morning routine & light stretching",
-                    "reason": "Gentle start, won't tire you out",
-                    "type": "health"
-                },
-                {
-                    "time": "8:00 AM - 10:00 AM",
-                    "task": "Deep work session - " + pending_tasks[0].description if pending_tasks else "Focused work",
-                    "reason": "High energy time for demanding tasks",
-                    "type": pending_tasks[0].type if pending_tasks else "work"
-                },
-                {
-                    "time": "10:00 AM - 10:15 AM",
-                    "task": "Break",
-                    "reason": "Short break to refresh your mind",
-                    "type": "break"
-                },
-                {
-                    "time": "10:15 AM - 12:00 PM",
-                    "task": "Project work - " + (pending_tasks[1].description if len(pending_tasks) > 1 else "Additional tasks"),
-                    "reason": "Continued focus time for complex tasks",
-                    "type": pending_tasks[1].type if len(pending_tasks) > 1 else "work"
-                },
-                {
-                    "time": "1:00 PM - 2:00 PM",
-                    "task": "Lunch break",
-                    "reason": "Nourishment and rest",
-                    "type": "personal"
-                },
-                {
-                    "time": "2:00 PM - 3:30 PM",
-                    "task": "College/Work commitments",
-                    "reason": "Scheduled college/work time",
-                    "type": "college/work"
-                },
-                {
-                    "time": "4:00 PM - 5:00 PM",
-                    "task": "Family time",
-                    "reason": "Dedicated family time as per your preferences",
-                    "type": "family"
-                },
-                {
-                    "time": "6:00 PM - 7:00 PM",
-                    "task": "Workout session",
-                    "reason": "Evening workout as per your preferences",
-                    "type": "health"
-                },
-                {
-                    "time": "8:00 PM - 9:00 PM",
-                    "task": "Review and plan for tomorrow",
-                    "reason": "Reflect on the day and prepare for tomorrow",
-                    "type": "personal"
-                }
-            ],
-            "daily_summary": "Balanced day with study, work, health, and family time. High-energy tasks scheduled during peak hours based on your pending tasks.",
-            "tips": ["Take 5-min breaks every hour", "Stay hydrated", "Maintain good posture while working"]
-        }
+        return jsonify({
+            "error": "No tasks",
+            "message": "Please add some tasks before generating a schedule. The AI needs tasks to optimize your day."
+        }), 400
+    
+    # Parse sleep schedule
+    try:
+        sleep_schedule = json.loads(current_user.sleep_schedule) if isinstance(current_user.sleep_schedule, str) else current_user.sleep_schedule
+        wake_time = sleep_schedule.get('wake_time', '7:00 AM')
+        bedtime = sleep_schedule.get('bedtime', '11:00 PM')
+    except:
+        wake_time = '7:00 AM'
+        bedtime = '11:00 PM'
+    
+    # Generate schedule based on user's actual tasks and preferences
+    schedule_items = []
+    
+    # Morning routine based on wake time
+    morning_end = add_time(wake_time, 30)
+    schedule_items.append({
+        "time": f"{wake_time} - {morning_end}",
+        "task": "Morning routine & light stretching",
+        "reason": "Gentle start to energize your day based on your wake up time",
+        "type": "health"
+    })
+    
+    # High energy time for important tasks
+    high_energy_start = add_time(wake_time, 60)  # 1 hour after waking
+    high_energy_end = add_time(high_energy_start, 120)  # 2 hours block
+    
+    schedule_items.append({
+        "time": f"{high_energy_start} - {high_energy_end}",
+        "task": f"Deep work session - {pending_tasks[0].description}" if pending_tasks else "Focused work",
+        "reason": "High energy time for demanding tasks based on your preferences",
+        "type": pending_tasks[0].type if pending_tasks else "work"
+    })
+    
+    # Break
+    break_time_start = add_time(high_energy_end, 15)
+    break_time_end = add_time(break_time_start, 15)
+    
+    schedule_items.append({
+        "time": f"{break_time_start} - {break_time_end}",
+        "task": "Break",
+        "reason": "Short break to refresh your mind",
+        "type": "break"
+    })
+    
+    # Continue with tasks
+    work_time_start = add_time(break_time_end, 15)
+    work_time_end = add_time(work_time_start, 90)  # 1.5 hours
+    
+    schedule_items.append({
+        "time": f"{work_time_start} - {work_time_end}",
+        "task": f"Project work - {pending_tasks[1].description if len(pending_tasks) > 1 else 'Additional tasks'}",
+        "reason": "Continued focus time for complex tasks",
+        "type": pending_tasks[1].type if len(pending_tasks) > 1 else "work"
+    })
+    
+    # Lunch break
+    lunch_start = add_time(work_time_end, 60)
+    lunch_end = add_time(lunch_start, 60)
+    
+    schedule_items.append({
+        "time": f"{lunch_start} - {lunch_end}",
+        "task": "Lunch break",
+        "reason": "Nourishment and rest based on your schedule",
+        "type": "personal"
+    })
+    
+    # Afternoon work
+    afternoon_start = add_time(lunch_end, 60)
+    afternoon_end = add_time(afternoon_start, 90)
+    
+    schedule_items.append({
+        "time": f"{afternoon_start} - {afternoon_end}",
+        "task": "College/Work commitments",
+        "reason": "Scheduled college/work time based on your weekly schedule",
+        "type": "college/work"
+    })
+    
+    # Family time
+    family_time = current_user.family_time or "6:00 PM - 7:00 PM"
+    schedule_items.append({
+        "time": family_time,
+        "task": "Family time",
+        "reason": "Dedicated family time as per your preferences",
+        "type": "family"
+    })
+    
+    # Workout time based on user preference
+    workout_pref = current_user.workout_preference or "evening"
+    workout_time = "7:00 PM - 8:00 PM"  # Default evening
+    if "morning" in workout_pref.lower():
+        workout_time = f"{add_time(wake_time, 30)} - {add_time(wake_time, 90)}"
+    
+    schedule_items.append({
+        "time": workout_time,
+        "task": "Workout session",
+        "reason": f"{workout_pref.capitalize()} workout as per your preferences",
+        "type": "health"
+    })
+    
+    # Evening review before bedtime
+    review_time_start = subtract_time(bedtime, 60)
+    schedule_items.append({
+        "time": f"{review_time_start} - {bedtime}",
+        "task": "Review and plan for tomorrow",
+        "reason": "Reflect on the day and prepare for tomorrow based on your bedtime",
+        "type": "personal"
+    })
+    
+    # Create schedule data
+    schedule_data = {
+        "schedule": schedule_items,
+        "daily_summary": f"Personalized schedule based on your wake time ({wake_time}), bedtime ({bedtime}), and {len(pending_tasks)} pending tasks.",
+        "tips": [
+            "Take 5-min breaks every hour",
+            "Stay hydrated throughout the day",
+            "Maintain good posture while working"
+        ]
+    }
     
     # Save schedule to database
     new_schedule = Schedule(
@@ -404,4 +457,4 @@ if __name__ == '__main__':
             db.session.add(admin_user)
             db.session.commit()
     
-    app.run(debug=True, port=5007)
+    app.run(debug=True, port=5008)

@@ -508,7 +508,6 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Progress bar animation */
         .progress {
             height: 10px;
             border-radius: 5px;
@@ -516,13 +515,7 @@
         }
         
         .progress-bar {
-            animation: progress 3s ease-in-out infinite;
-        }
-        
-        @keyframes progress {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
+            transition: none;
         }
     </style>
 </head>
