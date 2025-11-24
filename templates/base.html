@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AI Task Optimizer{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -26,6 +27,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         /* Animated background */
@@ -372,39 +375,112 @@
             margin: 10px 0;
         }
         
-        /* Enhanced Footer */
-        .footer {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(0,0,0,0.05);
-            padding: 25px 0;
-            margin-top: 40px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
-            text-align: center;
+        /* Footer Styles */
+        footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 2.5rem 0 1.5rem;
+            margin-top: auto;
         }
-        
+
         .footer-content {
             display: flex;
-            justify-content: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            margin-bottom: 1.5rem;
         }
-        
-        .footer a {
-            color: var(--primary-color);
-            font-weight: 600;
+
+        .copyright {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .made-by {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            flex-basis: 100%;
+        }
+
+        .made-by a {
+            color: #ffcc00;
             text-decoration: none;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: color 0.3s ease;
         }
-        
-        .footer a:hover {
-            color: var(--secondary-color);
+
+        .made-by a:hover {
+            color: #ffeb3b;
             text-decoration: underline;
         }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-links a {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .social-links a:hover {
+            transform: translateY(-5px);
+        }
+
+        .social-links img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .social-links img:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .social-links {
+                margin-top: 1rem;
+            }
+        }
         
-        .footer a i {
-            color: var(--danger-color);
-            animation: heartbeat 1.5s infinite;
+        /* Original logo colors */
+        .fab.fa-facebook {
+            color: #1877f2;
+        }
+        
+        .fab.fa-twitter {
+            color: #1da1f2;
+        }
+        
+        .fab.fa-linkedin {
+            color: #0a66c2;
+        }
+        
+        .fab.fa-instagram {
+            color: #e1306c;
+        }
+        
+        .fab.fa-youtube {
+            color: #ff0000;
         }
         
         @keyframes heartbeat {
@@ -517,6 +593,58 @@
         .progress-bar {
             transition: none;
         }
+        
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        html, body {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .ai-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1060;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--purple-gradient);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(106,17,203,0.35);
+        }
+        .ai-fab:hover { transform: translateY(-2px); }
+        .ai-panel textarea { min-height: 120px; }
+        .ai-panel {
+            position: fixed;
+            bottom: 96px;
+            right: 24px;
+            z-index: 1060;
+            width: 340px;
+            border-radius: 16px;
+            background: rgba(18, 18, 18, 0.92);
+            color: #e5e7eb;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            backdrop-filter: blur(10px);
+            transform: translateY(16px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+        .ai-panel.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .ai-panel .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; }
+        .ai-panel .panel-header .title { font-weight: 700; }
+        .ai-panel .panel-body { padding: 0 14px 14px; }
+        .ai-panel .prompt { border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(31,31,31,0.95); color: #e5e7eb; }
+        .ai-panel .tools { display: flex; gap: 10px; padding: 8px 2px 0; opacity: 0.85; }
+        .ai-panel .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px; }
+
     </style>
 </head>
 <body>
@@ -617,14 +745,35 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer mt-auto py-3">
+    <!-- New Footer -->
+    <footer>
         <div class="container">
             <div class="footer-content">
-                <span class="text-muted">Made by</span>
-                <a href="https://chinmay-joshi-4au4ky2.gamma.site/" target="_blank">
-                    <i class="fas fa-heart"></i> chinu
-                </a>
+                <p class="copyright">&copy; 2025 AI Task Optimizer. All rights reserved.</p>
+                
+                <div class="social-links">
+                    <a href="https://www.facebook.com/profile.php?id=100077258002607" target="_blank" rel="noopener noreferrer">
+                        <img src="https://img.icons8.com/color/48/facebook-new.png" alt="Facebook"/>
+                    </a>
+                    <a href="https://x.com/Chinmay30Joshi" target="_blank" rel="noopener noreferrer">
+                        <img src="https://img.icons8.com/color/48/twitter--v1.png" alt="Twitter"/>
+                    </a>
+                    <a href="https://www.linkedin.com/in/chinu-30n/" target="_blank" rel="noopener noreferrer">
+                        <img src="https://img.icons8.com/color/48/linkedin.png" alt="LinkedIn"/>
+                    </a>
+                    <a href="https://www.instagram.com/chinubhai2005/" target="_blank" rel="noopener noreferrer">
+                        <img src="https://img.icons8.com/fluency/48/instagram-new.png" alt="Instagram"/>
+                    </a>
+                    <a href="https://www.youtube.com/@Chinmay_Joshi-CJ" target="_blank" rel="noopener noreferrer">
+                        <img src="https://img.icons8.com/color/48/youtube-play.png" alt="YouTube"/>
+                    </a>
+                </div>
+                
+                <p class="made-by">Made with ❤️ from <a href="https://chinmay-joshi-4au4ky2.gamma.site/" target="_blank" rel="noopener noreferrer">chinu</a></p>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>Designed with passion for better productivity</p>
             </div>
         </div>
     </footer>
@@ -632,6 +781,77 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% if current_user.is_authenticated %}
+    <button class="ai-fab" id="openAiOptimizer" title="AI Optimizer"><i class="fas fa-robot"></i></button>
+    <div class="ai-panel" id="aiPanel">
+        <div class="panel-header">
+            <div class="title"><i class="fas fa-brain me-2"></i>AI Optimizer</div>
+            <button type="button" class="btn btn-sm btn-outline-light" id="closeAiPanel">Close</button>
+        </div>
+        <div class="panel-body">
+            <label class="form-label">Describe your day</label>
+            <textarea class="form-control prompt" id="aiPrompt" placeholder="Deadlines, focus areas, constraints"></textarea>
+            <div class="tools">
+                <i class="fas fa-search"></i>
+                <i class="fas fa-wand-magic-sparkles"></i>
+                <i class="fas fa-lightbulb"></i>
+                <i class="fas fa-language"></i>
+                <i class="fas fa-paperclip"></i>
+                <i class="fas fa-microphone"></i>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-secondary" id="cancelAi">Close</button>
+            <button class="btn btn-primary" id="runAiOptimizer"><i class="fas fa-magic me-2"></i>Optimize</button>
+        </div>
+    </div>
+    <script>
+      (function(){
+        const panel = document.getElementById('aiPanel');
+        const openBtn = document.getElementById('openAiOptimizer');
+        const runBtn = document.getElementById('runAiOptimizer');
+        const promptEl = document.getElementById('aiPrompt');
+        const closeBtn = document.getElementById('closeAiPanel');
+        const cancelBtn = document.getElementById('cancelAi');
+        function openPanel(){ panel.classList.add('open'); promptEl.focus(); }
+        function closePanel(){ panel.classList.remove('open'); }
+        if(openBtn){ openBtn.addEventListener('click', openPanel); }
+        if(closeBtn){ closeBtn.addEventListener('click', closePanel); }
+        if(cancelBtn){ cancelBtn.addEventListener('click', closePanel); }
+        window.openAiPanel = openPanel;
+        document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closePanel(); if(e.key === 'Enter' && panel.classList.contains('open')) runBtn.click(); });
+        if(runBtn){
+          runBtn.addEventListener('click', function(){
+            const original = runBtn.innerHTML;
+            runBtn.innerHTML = '<span class="loading"></span> Optimizing...';
+            runBtn.disabled = true;
+            $.ajax({
+              url: '/api/ai_optimize',
+              method: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify({ prompt: promptEl.value }),
+              success: function(){
+                runBtn.innerHTML = original;
+                runBtn.disabled = false;
+                closePanel();
+                const n = $('<div class="notification alert alert-success position-fixed" style="top: 20px; right: 20px; z-index: 9999;">Schedule optimized successfully!</div>');
+                $('body').append(n); setTimeout(()=>{ n.fadeOut(()=>n.remove()); }, 2000);
+                setTimeout(function(){ window.location.href = '/schedule'; }, 800);
+              },
+              error: function(xhr){
+                runBtn.innerHTML = original;
+                runBtn.disabled = false;
+                let msg = 'Error optimizing schedule';
+                try { msg = (xhr.responseJSON && xhr.responseJSON.message) || msg; } catch(e){}
+                const n = $('<div class="notification alert alert-danger position-fixed" style="top: 20px; right: 20px; z-index: 9999;">'+msg+'</div>');
+                $('body').append(n); setTimeout(()=>{ n.fadeOut(()=>n.remove()); }, 2500);
+              }
+            });
+          });
+        }
+      })();
+    </script>
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

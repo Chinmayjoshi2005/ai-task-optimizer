@@ -174,16 +174,22 @@ Format as JSON:
         if not date_str:
             date_str = datetime.now().strftime("%Y-%m-%d")
         
-        print(f"\n=== OPTIMIZING SCHEDULE FOR {date_str} ===\n")
+        # Check if profile exists and complete
+        required_profile_keys = ['name', 'role', 'peak_energy', 'study_preference', 
+                                 'sleep_schedule', 'family_time', 'workout_preference', 
+                                 'workout_impact', 'main_goals', 'weekly_schedule']
         
-        # Check if profile exists
-        if not self.user_profile:
-            print("⚠ Please set up your profile first!\n")
-            return
+        if not self.user_profile or not all(k in self.user_profile and self.user_profile[k] for k in required_profile_keys):
+            return {
+                "error": "Profile incomplete",
+                "message": "Please complete your profile before generating an optimized schedule."
+            }
         
         if not self.tasks.get('pending'):
-            print("⚠ No pending tasks found. Add some tasks first!\n")
-            return
+            return {
+                "error": "No tasks",
+                "message": "Please add some pending tasks before generating an optimized schedule."
+            }
         
         # Here you would call the AI API (Claude/OpenAI)
         # For now, I'll show the prompt that would be sent

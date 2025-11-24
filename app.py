@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import json
 import os
@@ -21,6 +21,13 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(int(id))
+
+# Serve favicon
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'templates', 'image'),
+                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 # Helper function to get today's date
 def get_today():
@@ -72,6 +79,14 @@ def subtract_time(time_str, minutes):
     except:
         # Fallback to simple subtraction if parsing fails
         return time_str
+
+def parse_time_str(time_str):
+    try:
+        if "AM" in time_str.upper() or "PM" in time_str.upper():
+            return datetime.strptime(time_str.strip(), "%I:%M %p")
+        return datetime.strptime(time_str.strip(), "%H:%M")
+    except:
+        return datetime.strptime("7:00 AM", "%I:%M %p")
 
 # Routes for authentication
 @app.route('/login', methods=['GET', 'POST'])
@@ -277,6 +292,153 @@ def api_tasks():
         
         return jsonify(tasks_data)
 
+# AI optimize
+@app.route('/api/ai_optimize', methods=['POST'])
+@login_required
+def api_ai_optimize():
+    try:
+        data = request.json or {}
+        prompt = data.get('prompt', '').strip()
+        date_str = data.get('date', get_today())
+
+        pending_tasks = Task.query.filter_by(user_id=current_user.id, status='pending').all()
+        if not pending_tasks:
+            return jsonify({
+                "error": "No tasks",
+                "message": "AI needs tasks to optimize. Add tasks, then retry.",
+                "requires_tasks": True
+            }), 400
+
+        try:
+            sleep_schedule = json.loads(current_user.sleep_schedule) if isinstance(current_user.sleep_schedule, str) else (current_user.sleep_schedule or {})
+        except Exception:
+            sleep_schedule = {}
+        wake_time = (sleep_schedule or {}).get('wake_time', '7:00 AM')
+        bedtime = (sleep_schedule or {}).get('bedtime', '11:00 PM')
+
+        # Simple prompt parsing to adjust blocks
+        p = prompt.lower()
+        wants_college = any(k in p for k in ["college", "class", "lecture"]) or (current_user.role and "student" in current_user.role)
+        wants_exam = "exam" in p or "test" in p
+        wants_morning_focus = "morning" in p and ("focus" in p or "deep" in p)
+        # Extract time range like "7:00 AM to 5:30 PM"
+        import re
+        time_match = re.search(r"(\d{1,2}:\d{2}\s*(?:am|pm))\s*(?:to|-)\s*(\d{1,2}:\d{2}\s*(?:am|pm))", p, re.IGNORECASE)
+        college_time_range = None
+        if time_match:
+            start_str = time_match.group(1).upper().replace('AM',' AM').replace('PM',' PM').replace('  ',' ')
+            end_str = time_match.group(2).upper().replace('AM',' AM').replace('PM',' PM').replace('  ',' ')
+            # Normalize and validate
+            try:
+                _ = datetime.strptime(start_str.strip(), "%I:%M %p")
+                _ = datetime.strptime(end_str.strip(), "%I:%M %p")
+                college_time_range = (start_str.strip(), end_str.strip())
+            except Exception:
+                college_time_range = None
+
+        schedule_items = []
+
+        def fmt(dt):
+            return dt.strftime("%I:%M %p").lstrip('0')
+
+        wake_dt = parse_time_str(wake_time)
+        cursor = wake_dt
+
+        morning_end_dt = cursor + timedelta(minutes=30)
+        schedule_items.append({"time": f"{fmt(cursor)} - {fmt(morning_end_dt)}", "task": "Morning routine & light stretching", "reason": "Gentle start", "type": "health"})
+        cursor = morning_end_dt
+
+        he_target = wake_dt + timedelta(minutes=(60 if wants_morning_focus else 90))
+        he_start_dt = max(cursor, he_target)
+        he_end_dt = he_start_dt + timedelta(minutes=120)
+
+        c_start_dt = None
+        c_end_dt = None
+        if college_time_range:
+            c_start_dt = parse_time_str(college_time_range[0])
+            c_end_dt = parse_time_str(college_time_range[1])
+
+        if c_start_dt and he_start_dt < c_start_dt:
+            if he_end_dt <= c_start_dt:
+                schedule_items.append({"time": f"{fmt(he_start_dt)} - {fmt(he_end_dt)}", "task": f"Deep work - {pending_tasks[0].description}", "reason": "High-energy block aligned to your prompt", "type": pending_tasks[0].type})
+                cursor = he_end_dt
+            else:
+                adj_end_dt = c_start_dt
+                if (adj_end_dt - he_start_dt).total_seconds() >= 1800:
+                    schedule_items.append({"time": f"{fmt(he_start_dt)} - {fmt(adj_end_dt)}", "task": f"Deep work - {pending_tasks[0].description}", "reason": "High-energy block aligned to your prompt", "type": pending_tasks[0].type})
+                    cursor = adj_end_dt
+        elif not c_start_dt:
+            schedule_items.append({"time": f"{fmt(he_start_dt)} - {fmt(he_end_dt)}", "task": f"Deep work - {pending_tasks[0].description}", "reason": "High-energy block aligned to your prompt", "type": pending_tasks[0].type})
+            cursor = he_end_dt
+
+        if not c_start_dt or (cursor + timedelta(minutes=30)) <= c_start_dt:
+            break_start_dt = cursor + timedelta(minutes=15)
+            break_end_dt = break_start_dt + timedelta(minutes=15)
+            schedule_items.append({"time": f"{fmt(break_start_dt)} - {fmt(break_end_dt)}", "task": "Break", "reason": "Short reset", "type": "break"})
+            cursor = break_end_dt
+
+        if c_start_dt:
+            if cursor < c_start_dt:
+                cursor = c_start_dt
+            schedule_items.append({"time": f"{fmt(c_start_dt)} - {fmt(c_end_dt)}", "task": "College classes", "reason": "Prompt-specified college hours", "type": "college"})
+            cursor = c_end_dt
+        else:
+            work_start_dt = cursor + timedelta(minutes=15)
+            work_end_dt = work_start_dt + timedelta(minutes=90)
+            task2 = f"Project work - {pending_tasks[1].description if len(pending_tasks) > 1 else 'Additional tasks'}"
+            type2 = (pending_tasks[1].type if len(pending_tasks) > 1 else "work")
+            schedule_items.append({"time": f"{fmt(work_start_dt)} - {fmt(work_end_dt)}", "task": task2, "reason": "Continued focus", "type": type2})
+            cursor = work_end_dt
+
+        lunch_start_dt = cursor + timedelta(minutes=60)
+        lunch_end_dt = lunch_start_dt + timedelta(minutes=60)
+        schedule_items.append({"time": f"{fmt(lunch_start_dt)} - {fmt(lunch_end_dt)}", "task": "Lunch break", "reason": "Nourishment", "type": "personal"})
+        cursor = lunch_end_dt
+
+        afternoon_start_dt = cursor + timedelta(minutes=60)
+        afternoon_end_dt = afternoon_start_dt + timedelta(minutes=90)
+        schedule_items.append({"time": f"{fmt(afternoon_start_dt)} - {fmt(afternoon_end_dt)}", "task": "College/Work commitments" if wants_college else "Task review & planning", "reason": "Aligned with prompt", "type": "college/work"})
+        cursor = afternoon_end_dt
+
+        # Family
+        family_time = current_user.family_time or "6:00 PM - 7:00 PM"
+        schedule_items.append({"time": family_time, "task": "Family time", "reason": "Preferences", "type": "family"})
+
+        # Workout
+        workout_pref = (current_user.workout_preference or "evening").lower()
+        workout_time = "7:00 PM - 8:00 PM"
+        if "morning" in workout_pref:
+            workout_time = f"{add_time(wake_time, 30)} - {add_time(wake_time, 90)}"
+        schedule_items.append({"time": workout_time, "task": "Workout session", "reason": f"{workout_pref.title()} workout", "type": "health"})
+
+        # Evening review
+        review_time_start = subtract_time(bedtime, 60)
+        schedule_items.append({"time": f"{review_time_start} - {bedtime}", "task": "Review and plan for tomorrow", "reason": "Reflect and prepare", "type": "personal"})
+
+        schedule_data = {
+            "schedule": schedule_items,
+            "daily_summary": f"Optimized using profile and {len(pending_tasks)} tasks. Prompt: {prompt}",
+            "tips": [
+                "Use high-energy blocks for deep work",
+                "Take short breaks every hour",
+                "Hydrate and move regularly"
+            ]
+        }
+
+        # Save
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        existing = Schedule.query.filter_by(user_id=current_user.id, date=date_obj).first()
+        if existing:
+            existing.schedule_data = schedule_data
+            db.session.commit()
+        else:
+            new_schedule = Schedule(user_id=current_user.id, date=date_obj, schedule_data=schedule_data)
+            db.session.add(new_schedule)
+            db.session.commit()
+        return jsonify({"status": "success", "date": date_str, "schedule": schedule_data})
+    except Exception as e:
+        return jsonify({"error": "server_error", "message": f"Failed to optimize: {str(e)}"}), 500
+
 # API routes for schedule
 @app.route('/api/schedule', methods=['POST'])
 @login_required
@@ -457,4 +619,4 @@ if __name__ == '__main__':
             db.session.add(admin_user)
             db.session.commit()
     
-    app.run(debug=True, port=5008)
+    app.run(debug=True, port=5012)

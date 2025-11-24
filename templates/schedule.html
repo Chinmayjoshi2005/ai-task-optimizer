@@ -152,32 +152,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('generateSchedule').click();
     });
     
-    // AI Optimize button
     document.getElementById('aiOptimize').addEventListener('click', function() {
-        showNotification('Schedule optimization in progress...', 'info');
-        
-        // Simulate AI generation
-        const originalText = this.innerHTML;
-        this.innerHTML = '<span class="loading"></span> Optimizing...';
-        this.disabled = true;
-        
-        $.ajax({
-            url: '/api/schedule',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({}),
-            success: function(response) {
-                showNotification('Schedule optimized successfully!', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            },
-            error: function() {
-                showNotification('Error optimizing schedule', 'error');
-                document.getElementById('aiOptimize').innerHTML = originalText;
-                document.getElementById('aiOptimize').disabled = false;
-            }
-        });
+        if (window.openAiPanel) { window.openAiPanel(); }
     });
     
     // View historical schedule
